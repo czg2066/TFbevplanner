@@ -1,0 +1,12 @@
+*.pyc
+*.log
+.project
+.pydevproject
+.enh_epoch20
+.team_code/logdir
+.enh_epoch11
+.001_epoch30
+.results
+README.md
+LICENSE
+geely_bevformer.zip
