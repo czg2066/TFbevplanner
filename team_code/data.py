@@ -71,6 +71,7 @@ class CARLA_Data(Dataset):  # pylint: disable=locally-disabled, invalid-name
     self.image_augmenter_func = image_augmenter(config.color_aug_prob, cutout=config.use_cutout)
     self.lidar_augmenter_func = lidar_augmenter(config.lidar_aug_prob, cutout=config.use_cutout)
 
+    self.flag = []
     # Initialize with 1 example per class
     self.angle_distribution = np.arange(len(config.angles)).tolist()
     self.speed_distribution = np.arange(len(config.target_speeds)).tolist()
@@ -200,6 +201,7 @@ class CARLA_Data(Dataset):  # pylint: disable=locally-disabled, invalid-name
           self.future_boxes.append(future_box)
           self.measurements.append(measurement)
           self.sample_start.append(seq)
+        self.flag.append(len(self.images))
 
     if estimate_class_distributions:
       classes_target_speeds = np.unique(self.speed_distribution)
@@ -444,12 +446,12 @@ class CARLA_Data(Dataset):  # pylint: disable=locally-disabled, invalid-name
           imgs_back_right_i = cv2.cvtColor(imgs_back_right_i, cv2.COLOR_BGR2RGB)
           if self.config.use_semantic:
             semantics_i = cv2.imread(str(semantics[i], encoding='utf-8'), cv2.IMREAD_UNCHANGED)
-            semantics_i = cv2.resize(semantics_i, (288, self.img_w), interpolation=cv2.INTER_NEAREST)
+            semantics_i = cv2.resize(semantics_i, (192, self.img_w), interpolation=cv2.INTER_NEAREST)
           if self.config.use_bev_semantic:
             bev_semantics_i = cv2.imread(str(bev_semantics[i], encoding='utf-8'), cv2.IMREAD_UNCHANGED)
           if self.config.use_depth:
             depth_i = cv2.imread(str(depth[i], encoding='utf-8'), cv2.IMREAD_UNCHANGED)
-            depth_i = cv2.resize(depth_i, (288, self.img_w), interpolation=cv2.INTER_NEAREST)
+            depth_i = cv2.resize(depth_i, (192, self.img_w), interpolation=cv2.INTER_NEAREST)
           if self.config.augment:
             images_augmented_i = cv2.imread(str(images_augmented[i], encoding='utf-8'), cv2.IMREAD_COLOR)
             images_augmented_i = cv2.cvtColor(images_augmented_i, cv2.COLOR_BGR2RGB)
@@ -754,9 +756,32 @@ class CARLA_Data(Dataset):  # pylint: disable=locally-disabled, invalid-name
     target_speed_index, angle_index = self.get_indices_speed_angle(target_speed=current_measurement['target_speed'],
                                                                    brake=brake,
                                                                    angle=current_measurement['angle'])
-
+    if index+1 in self.flag or index == 0:
+      curr_to_prev_ego_rt = np.eye(4)
+      start_of_sequence = True
+      sequence_group_idx = 0
+      curr_ego_matrix = np.array(current_measurement['ego_matrix'])
+    else:
+      start_of_sequence = False
+      for i_flag in range(len(self.flag)-1):
+        if index+1 < self.flag[i_flag+1] and index > self.flag[i_flag]:
+          sequence_group_idx = index - self.flag[i_flag] + 1
+          break
+      if i_flag == len(self.flag)-2:
+        sequence_group_idx = index - self.flag[i_flag] + 1
+      curr_ego_matrix = np.array(current_measurement['ego_matrix'])
+      measurement_file_pre = str(measurements[0], encoding='utf-8') + (f'/{(sample_start + self.config.seq_len - 2):04}.json.gz')
+      with gzip.open(measurement_file_pre, 'rt', encoding='utf-8') as f1:
+        measurements_pre = ujson.load(f1)
+      prev_ego_matrix = measurements_pre['ego_matrix']
+      prev_ego_matrix_inv = np.linalg.inv(prev_ego_matrix)
+      curr_to_prev_ego_rt = prev_ego_matrix_inv @ curr_ego_matrix
     data['brake'] = brake
     data['angle_index'] = angle_index
+    data['img_metas'] = {}
+    data['img_metas']['curr_to_prev_ego_rt'] = curr_to_prev_ego_rt
+    data['img_metas']['start_of_sequence'] = start_of_sequence
+    data['img_metas']['sequence_group_idx'] = sequence_group_idx
 
     if self.config.use_plant_labels:
       if augment_sample:

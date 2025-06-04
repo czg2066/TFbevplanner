@@ -5,7 +5,7 @@ from mmcv.cnn import ConvModule
 from mmcv.runner import BaseModule, auto_fp16
 import torch.utils.checkpoint as cp
 
-from ..builder import NECKS
+from .builder import NECKS
 
 
 @NECKS.register_module()

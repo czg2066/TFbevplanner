@@ -1,0 +1,5 @@
+# ninja log v5
+2	1386	1748919515728808400	/media/czg/data_store/TFbevplanner/team_code/bevplanner/bev_pool_v2/build/temp.linux-x86_64-3.7/src/bev_pool_cuda.o	376cb126884711f0
+1	24220	1748919538523638100	/media/czg/data_store/TFbevplanner/team_code/bevplanner/bev_pool_v2/build/temp.linux-x86_64-3.7/src/bev_pool.o	963e288289a546bb
+17	1029	1748919541374012200	/media/czg/data_store/TFbevplanner/team_code/bevplanner/bev_pool_v2/build/temp.linux-x86_64-3.7/src/bev_pool_cuda.o	6952b6265fcc94ad
+16	23913	1748919564221431400	/media/czg/data_store/TFbevplanner/team_code/bevplanner/bev_pool_v2/build/temp.linux-x86_64-3.7/src/bev_pool.o	a17404432b6e5247

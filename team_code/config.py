@@ -29,8 +29,8 @@ class GlobalConfig:
     # Autopilot
     # -----------------------------------------------------------------------------
     self.point_cloud_range = [-51.2, -51.2, -5.0, 51.2, 51.2, 3.0]
-    self.img_w = 480
-    self.img_h = 270
+    self.img_w = 320
+    self.img_h = 180
     self.bev_h_ = 60
     self.bev_w_ = 60
     self.transformer_dict=dict(

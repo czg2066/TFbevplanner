@@ -14,7 +14,7 @@ from torch.utils.checkpoint import checkpoint
 from mmdet.models.backbones.resnet import BasicBlock
 from mmdet.models import HEADS
 import torch.utils.checkpoint as cp
-from mmdet3d.models import builder
+from . import builder
 from mmcv.runner import force_fp32, auto_fp16
 import torch
 from torchvision.utils import make_grid

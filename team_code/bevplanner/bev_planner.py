@@ -10,17 +10,17 @@ import torch.nn as nn
 from mmcv.runner import force_fp32
 import os
 from mmdet.models import DETECTORS
-from mmdet3d.models import builder
-from mmdet3d.models.detectors import CenterPoint
-from mmdet3d.models.builder import build_head, build_neck
+from . import builder
+from .centerpoint import CenterPoint
+from .builder import build_head, build_neck
 import numpy as np
 import torch
 import torchvision
 import matplotlib
 import cv2
 import mmcv
-from ..utils.grid_mask import GridMask
-from ..utils.bricks import save_tensor
+from .grid_mask import GridMask
+from .bricks import save_tensor
 
 def generate_forward_transformation_matrix(bda, img_meta_dict=None):
     b = bda.size(0)
@@ -99,37 +99,37 @@ class BEVPlanner(CenterPoint):
       
         # BEVDet init
         self.forward_projection = builder.build_neck(forward_projection) if forward_projection else None
-        self.img_bev_encoder_backbone = builder.build_backbone(img_bev_encoder_backbone) if img_bev_encoder_backbone else None
-        self.img_bev_encoder_neck = builder.build_neck(img_bev_encoder_neck) if img_bev_encoder_neck else None
+        # self.img_bev_encoder_backbone = builder.build_backbone(img_bev_encoder_backbone) if img_bev_encoder_backbone else None
+        # self.img_bev_encoder_neck = builder.build_neck(img_bev_encoder_neck) if img_bev_encoder_neck else None
 
-        # BEVFormer init
-        self.backward_projection = builder.build_head(backward_projection) if backward_projection else None
+        # # BEVFormer init
+        # self.backward_projection = builder.build_head(backward_projection) if backward_projection else None
     
         # FB-BEV init
         if not self.forward_projection: assert not frpn, 'frpn relies on LSS'
-        self.frpn = builder.build_head(frpn) if frpn else None
+        # self.frpn = builder.build_head(frpn) if frpn else None
 
         # Depth Net
         self.depth_net = builder.build_head(depth_net) if depth_net else None
 
-        # Occupancy Head
-        self.occupancy_head = builder.build_head(occupancy_head) if occupancy_head else None
+        # # Occupancy Head
+        # self.occupancy_head = builder.build_head(occupancy_head) if occupancy_head else None
 
-        # 2D det head
-        self.img_det_2d_head = builder.build_head(img_det_2d_head) if img_det_2d_head else None
+        # # 2D det head
+        # self.img_det_2d_head = builder.build_head(img_det_2d_head) if img_det_2d_head else None
 
-        # map head
-        if map_head:
-            map_head['train_cfg'] = kwargs.get('train_cfg', None)
-            self.map_head = builder.build_head(map_head)
-        else: 
-            self.map_head = None
+        # # map head
+        # if map_head:
+        #     map_head['train_cfg'] = kwargs.get('train_cfg', None)
+        #     self.map_head = builder.build_head(map_head)
+        # else: 
+        #     self.map_head = None
 
-        # motion
-        self.motion_head = builder.build_head(motion_head) if motion_head else None        
+        # # motion
+        # self.motion_head = builder.build_head(motion_head) if motion_head else None        
 
-        # planner
-        self.planner_head = builder.build_head(planner_head) if planner_head else None
+        # # planner
+        # self.planner_head = builder.build_head(planner_head) if planner_head else None
         
         self.embed_dims = embed_dims
 
@@ -138,8 +138,8 @@ class BEVPlanner(CenterPoint):
             self.grid_mask = GridMask(True, True, rotate=1, offset=False, ratio=0.5, mode=1, prob=0.7)
         
         self.add_forward_backbward_feats = add_forward_backbward_feats # fuse voxel features and bev features
-        self.use_depth_supervision = use_depth_supervision
-        self.yolox_use_ml_feats = yolox_use_ml_feats
+        # self.use_depth_supervision = use_depth_supervision
+        # self.yolox_use_ml_feats = yolox_use_ml_feats
         self.occupancy_save_path = occupancy_save_path # for saving data\for submitting to test server
 
 
@@ -247,20 +247,19 @@ class BEVPlanner(CenterPoint):
         voxel_feat = True  if len(curr_bev.shape) == 5 else False
         if voxel_feat:
             curr_bev = curr_bev.permute(0, 1, 4, 2, 3) # n, c, z, h, w
-        
         seq_ids = torch.LongTensor([
-            single_img_metas['sequence_group_idx'] 
-            for single_img_metas in img_metas]).to(curr_bev.device)
+            single_img_metas
+            for single_img_metas in img_metas['sequence_group_idx'] ]).to(curr_bev.device)
         start_of_sequence = torch.BoolTensor([
-            single_img_metas['start_of_sequence'] 
-            for single_img_metas in img_metas]).to(curr_bev.device)
+            single_img_metas
+            for single_img_metas in img_metas['start_of_sequence'] ]).to(curr_bev.device)
         forward_augs = generate_forward_transformation_matrix(bda)
       
         # print('sqe_ids', seq_ids, ' start_of_sequence ', start_of_sequence.tolist(), ' index ', img_metas[0]['index'], img_metas[0]['scene_name'])
 
         curr_to_prev_ego_rt = torch.stack([
-            single_img_metas['curr_to_prev_ego_rt']
-            for single_img_metas in img_metas]).to(curr_bev)
+            single_img_metas
+            for single_img_metas in img_metas['curr_to_prev_ego_rt']]).to(curr_bev)
 
         if not self.align_prev_bev:
             curr_to_prev_ego_rt= torch.eye(4).repeat(curr_to_prev_ego_rt.size(0), 1, 1).to(curr_bev)
@@ -461,8 +460,6 @@ class BEVPlanner(CenterPoint):
 
         bev_feat = self.bev_encoder(bev_feat)
         
-        
-        return_map['context'] = mlvl_context if self.yolox_use_ml_feats else context
         return_map['depth'] = depth
         return_map['cam_params'] = cam_params
         return_map['img_bev_feat'] = bev_feat

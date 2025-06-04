@@ -748,7 +748,7 @@ class Engine(object):
     elif self.args.backbone in ('transFuser', 'aim', 'bev_encoder'):
       checkpoint = data['route'][:, :self.config.predict_checkpoint_len].to(self.device, dtype=torch.float32)
       rgb = data['rgb'].to(self.device, dtype=torch.float32)
-      meta_data = data['measurements']
+      meta_data = data['measurements'] if False else data['img_metas']
       rgb_front = data['rgb_front'].to(self.device, dtype=torch.float32)
       rgb_front_left = data['rgb_front_left'].to(self.device, dtype=torch.float32)
       rgb_front_right = data['rgb_front_right'].to(self.device, dtype=torch.float32)

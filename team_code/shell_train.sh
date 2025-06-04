@@ -1,6 +1,6 @@
 #!/bin/bash
 
-export CARLA_ROOT=/media/zr/vec_env/carla9101
+export CARLA_ROOT=/home/czg/CARLA_0.9.10.1
 export PYTHONPATH=$PYTHONPATH:${CARLA_ROOT}/PythonAPI
 export PYTHONPATH=$PYTHONPATH:${CARLA_ROOT}/PythonAPI/carla
 export PYTHONPATH=$PYTHONPATH:${CARLA_ROOT}/PythonAPI/carla/dist/carla-0.9.10-py3.7-linux-x86_64.egg
@@ -15,10 +15,10 @@ torchrun --nnodes=1 \
 --rdzv_id=42353467 \
 --rdzv_backend=c10d train.py \
 --id two_stage_001 \
---batch_size 3 \
+--batch_size 1 \
 --setting 02_05_withheld \
---root_dir /media/zr/DriveLab_Datastorage/geely_data \
---logdir ./logdir \
+--root_dir /media/czg/Temp_data/geely_data \
+--logdir ../logdir \
 --use_controller_input_prediction 0 \
 --use_wp_gru 0 \
 --use_discrete_command 0 \
